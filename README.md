@@ -16,6 +16,8 @@ A comprehensive, interactive demonstration server and laboratory exercise suite 
 - **Lab 06: File System Operations** — Native `fs` and `fs.promises` file operations (read, write, append, directory management).
 - **Lab 07: EventEmitter** — Event-driven architecture with Node.js `EventEmitter`.
 - **Lab 08: Capstone Portal** — Interactive web dashboard with real-time lab execution, source code inspection, and persistent student notes.
+- **🎓 BCA VII Live Lab Directory** — Interactive submission modal and shared live board where BCA Semester VII students submit their deployed cloud URL and local workstation IP address for faculty and peer evaluation.
+
 
 ---
 

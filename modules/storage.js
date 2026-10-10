@@ -4,6 +4,7 @@ const path = require('path');
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const STUDENTS = path.join(DATA_DIR, 'students.json');
 const NOTES = path.join(DATA_DIR, 'notes.json');
+const DEPLOYMENTS = path.join(DATA_DIR, 'deployments.json');
 
 async function readJSON(file) {
   const raw = await fs.readFile(file, 'utf8');
@@ -25,4 +26,34 @@ async function addNote(text) {
   return note;
 }
 
-module.exports = { getStudents, getNotes, addNote };
+async function getDeployments() {
+  try { return await readJSON(DEPLOYMENTS); }
+  catch (e) {
+    if (e.code === 'ENOENT') {
+      await fs.writeFile(DEPLOYMENTS, JSON.stringify([], null, 2));
+      return [];
+    }
+    throw e;
+  }
+}
+
+async function addDeployment(data) {
+  const deployments = await getDeployments();
+  const item = {
+    id: deployments.length + 1,
+    studentName: (data.studentName || '').trim(),
+    rollNo: (data.rollNo || '').trim(),
+    semester: 'BCA VII',
+    liveUrl: (data.liveUrl || '').trim(),
+    localIp: (data.localIp || '').trim(),
+    remarks: (data.remarks || '').trim(),
+    clientIp: data.clientIp || '',
+    createdAt: new Date().toISOString()
+  };
+  deployments.push(item);
+  await fs.writeFile(DEPLOYMENTS, JSON.stringify(deployments, null, 2));
+  return item;
+}
+
+module.exports = { getStudents, getNotes, addNote, getDeployments, addDeployment };
+

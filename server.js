@@ -24,7 +24,8 @@ const slugify = require('slugify');
 
 // Application modules
 const { logger, LOG_FILE } = require('./modules/logger');
-const { getStudents, getNotes, addNote } = require('./modules/storage');
+const { getStudents, getNotes, addNote, getDeployments, addDeployment } = require('./modules/storage');
+
 
 // Port configuration (compatible with Render cloud and local machine)
 const PORT = process.env.PORT || 3000;
@@ -160,6 +161,30 @@ function runScript(filePath) {
     });
   });
 }
+
+// Helper: Parse incoming request body (JSON and urlencoded)
+function parseBody(req) {
+  return new Promise((resolve) => {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk.toString();
+      if (body.length > 1e6) req.destroy();
+    });
+    req.on('end', () => {
+      if (!body) return resolve({});
+      try {
+        resolve(JSON.parse(body));
+      } catch {
+        const params = new URLSearchParams(body);
+        const obj = {};
+        for (const [k, v] of params.entries()) obj[k] = v;
+        resolve(obj);
+      }
+    });
+    req.on('error', () => resolve({}));
+  });
+}
+
 
 // Clean, human-designed stylesheet with Node.js colors
 const SHARED_CSS = `
@@ -588,8 +613,157 @@ const SHARED_CSS = `
   @media (max-width: 768px) {
     .header-content { flex-direction: column; align-items: flex-start; }
     .footer-content { flex-direction: column; align-items: flex-start; }
+    .bca7-header { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* BCA VII Feature Styles */
+  .btn-highlight {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: #0284c7 !important;
+    font-weight: 700 !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-highlight:hover {
+    background: #0369a1 !important;
+    color: #ffffff !important;
+  }
+  .bca7-panel {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-top: 4px solid #0284c7;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 44px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .bca7-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .bca7-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .deployments-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-top: 14px;
+  }
+  .deployments-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+    text-align: left;
+  }
+  .deployments-table th {
+    background: #f8fafc;
+    padding: 10px 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border-color);
+    white-space: nowrap;
+  }
+  .deployments-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+  }
+  .deployments-table tr:hover {
+    background: #f8fafc;
+  }
+  .url-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #0284c7;
+    text-decoration: none;
+    font-weight: 600;
+    background: #f0f9ff;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid #bae6fd;
+    word-break: break-all;
+  }
+  .url-link:hover {
+    background: #e0f2fe;
+    text-decoration: underline;
+  }
+  .ip-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 0.8rem;
+    color: #1e293b;
+    font-weight: 500;
+  }
+  .copy-btn {
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 0.75rem;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background 0.15s ease;
+  }
+  .copy-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+  }
+  .form-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--node-dark);
+    margin-bottom: 4px;
+  }
+  .form-help {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+  }
+  .form-row {
+    margin-bottom: 14px;
+  }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    z-index: 2000;
+    display: none;
   }
 `;
+
 
 // Helper: Academic Header
 function getHeaderHTML(breadcrumb) {
@@ -711,6 +885,8 @@ function getPortalHTML() {
         <button class="nav-btn active" onclick="filterCards('all', this)">All Labs</button>
         <button class="nav-btn" onclick="filterCards('script', this)">Script Labs</button>
         <button class="nav-btn" onclick="filterCards('server', this)">Server Labs</button>
+        <button class="nav-btn btn-highlight" onclick="openModal('deployment-modal')">🚀 Submit Lab (BCA VII)</button>
+        <a href="#bca7-deployments" class="nav-btn" style="color:#0284c7;font-weight:700;">🎓 BCA VII Live Board</a>
         <a href="#capstone-panel" class="nav-btn">Capstone Demo</a>
         <button class="nav-btn" onclick="openModal('setup-modal')" style="margin-left:auto;">Student Setup Guide</button>
       </div>
@@ -719,6 +895,56 @@ function getPortalHTML() {
 
   <main>
     <div class="container">
+
+      <!-- BCA VII Student Deployments Panel -->
+      <section id="bca7-deployments" class="bca7-panel">
+        <div class="bca7-header">
+          <div>
+            <div class="bca7-badge">🎓 BCA VII Practical Evaluations</div>
+            <h2 class="section-title" style="margin-bottom:4px;">BCA VII Student Lab Deployments</h2>
+            <p class="section-desc" style="margin-bottom:0;">Live cloud-deployed URLs and local system IP addresses submitted by BCA Semester VII students. Visible to all peers and faculty for instant testing.</p>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="openModal('deployment-modal')" style="background:#0284c7;border-color:#0284c7;font-weight:700;">
+              <span style="font-size:1rem;margin-right:4px;">🚀</span> Submit Your Live Lab (BCA VII)
+            </button>
+            <button class="btn btn-secondary" onclick="loadDeployments()">🔄 Refresh</button>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <input type="text" id="deploy-search" class="input-field" placeholder="🔍 Search student name, roll number, or IP..." oninput="filterDeployments()" style="min-width:280px;">
+            <span style="font-size:0.82rem;color:var(--text-muted);font-weight:600;">Total Submissions: <b id="deploy-count" style="color:#0284c7;font-size:0.95rem;">0</b></span>
+          </div>
+          <div style="font-size:0.8rem;color:var(--text-muted);">
+            💡 Click on any student's live URL to test their cloud deployment
+          </div>
+        </div>
+
+        <div class="deployments-table-wrapper">
+          <table class="deployments-table">
+            <thead>
+              <tr>
+                <th style="width:40px;">#</th>
+                <th>Student</th>
+                <th>Course / Sem</th>
+                <th>Live Deployed URL</th>
+                <th>Local System IP</th>
+                <th>Remarks / Host</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody id="deployments-table-body">
+              <tr>
+                <td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">
+                  Loading BCA VII submissions...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <h2 class="section-title">Laboratory Exercises</h2>
       <p class="section-desc">Select any laboratory exercise below to run it live, view code, or open its workspace.</p>
@@ -739,10 +965,14 @@ function getPortalHTML() {
           <h3>Server Statistics</h3>
           <p class="capstone-desc">Values retrieved from /api/dashboard.</p>
           
-          <div class="stats-row">
+          <div class="stats-row" style="grid-template-columns: repeat(4, 1fr);">
             <div class="stat-box">
               <div class="stat-val" id="stat-students">-</div>
               <div class="stat-lbl">Students</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="stat-deployments" style="color:#0284c7;">-</div>
+              <div class="stat-lbl">BCA VII Labs</div>
             </div>
             <div class="stat-box">
               <div class="stat-val" id="stat-notes">-</div>
@@ -759,6 +989,7 @@ function getPortalHTML() {
             <a class="btn btn-secondary btn-sm" href="/health" target="_blank">Health Endpoint</a>
             <a class="btn btn-secondary btn-sm" href="/about" target="_blank">About Endpoint</a>
           </div>
+
         </div>
 
         <!-- Student Directory Query -->
@@ -889,6 +1120,50 @@ function getPortalHTML() {
     </div>
   </div>
 
+  <!-- 5. BCA VII Deployment Submission Modal -->
+  <div class="modal-overlay" id="deployment-modal" onclick="if(event.target===this)closeModal('deployment-modal')">
+    <div class="modal-card" style="max-width:560px;">
+      <div class="modal-header">
+        <div>
+          <h3>🚀 Submit BCA VII Lab Deployment</h3>
+          <p style="font-size:0.82rem;color:var(--text-muted);">Share your live deployed URL and local IP address for evaluation.</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('deployment-modal')">&times;</button>
+      </div>
+      <form id="deployment-form" onsubmit="handleDeploymentSubmit(event)">
+        <div class="form-row">
+          <label class="form-label" for="deploy-name">Student Full Name *</label>
+          <input type="text" id="deploy-name" class="input-field" placeholder="e.g. Aditya Soni" required style="width:100%;">
+        </div>
+        <div class="form-row">
+          <label class="form-label" for="deploy-roll">Roll Number / Student ID *</label>
+          <input type="text" id="deploy-roll" class="input-field" placeholder="e.g. 23145001" required style="width:100%;">
+        </div>
+        <div class="form-row">
+          <label class="form-label" for="deploy-url">Live Deployed URL *</label>
+          <input type="url" id="deploy-url" class="input-field" placeholder="https://my-nodejs-lab.onrender.com" required style="width:100%;">
+          <div class="form-help">Cloud host URL (Render, Vercel, Railway, etc.). Must include https://</div>
+        </div>
+        <div class="form-row">
+          <label class="form-label" for="deploy-ip">Local System IP Address *</label>
+          <input type="text" id="deploy-ip" class="input-field" placeholder="e.g. 192.168.1.45:3000" required style="width:100%;">
+          <div class="form-help">Your workstation's local IPv4 and port (run <code>ipconfig</code> in CMD).</div>
+        </div>
+        <div class="form-row">
+          <label class="form-label" for="deploy-remarks">Remarks / Host Platform (Optional)</label>
+          <input type="text" id="deploy-remarks" class="input-field" placeholder="e.g. Render Web Service, port 3000" style="width:100%;">
+        </div>
+        <div id="deploy-form-error" style="color:#dc2626;font-size:0.82rem;margin-bottom:10px;display:none;background:#fef2f2;padding:8px 10px;border-radius:4px;border:1px solid #fecaca;"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('deployment-modal')">Cancel</button>
+          <button type="submit" id="deploy-submit-btn" class="btn btn-primary btn-sm" style="background:#0284c7;border-color:#0284c7;font-weight:700;">Submit & Publish Live</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-notification" class="toast"></div>
+
   ${getFooterHTML()}
 
   <script>
@@ -1013,6 +1288,9 @@ function getPortalHTML() {
         const res = await fetch('/api/dashboard');
         const data = await res.json();
         document.getElementById('stat-students').textContent = data.students ?? '-';
+        if (document.getElementById('stat-deployments')) {
+          document.getElementById('stat-deployments').textContent = data.deployments ?? '-';
+        }
         document.getElementById('stat-notes').textContent = data.notes ?? '-';
         document.getElementById('stat-requests').textContent = data.requestsLogged ?? '-';
       } catch (e) {
@@ -1063,9 +1341,169 @@ function getPortalHTML() {
       }
     }
 
+    // --- BCA VII Submissions Script Logic ---
+    let allDeployments = [];
+
+    function showToast(msg) {
+      const t = document.getElementById('toast-notification');
+      t.textContent = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3500);
+    }
+
+    async function loadDeployments() {
+      const tbody = document.getElementById('deployments-table-body');
+      try {
+        const res = await fetch('/api/deployments');
+        const data = await res.json();
+        allDeployments = data.deployments || [];
+        document.getElementById('deploy-count').textContent = allDeployments.length;
+        if (document.getElementById('stat-deployments')) {
+          document.getElementById('stat-deployments').textContent = allDeployments.length;
+        }
+        renderDeployments(allDeployments);
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#dc2626;">Failed to load deployments: ' + err.message + '</td></tr>';
+      }
+    }
+
+    function renderDeployments(items) {
+      const tbody = document.getElementById('deployments-table-body');
+      if (!items || !items.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">' +
+          '<div style="font-size:1.05rem;margin-bottom:6px;font-weight:600;">No BCA VII lab submissions yet!</div>' +
+          '<div style="font-size:0.84rem;">Be the first student to submit your deployed lab URL and local IP.</div>' +
+          '<button class="btn btn-primary btn-sm" onclick="openModal(\\'deployment-modal\\')" style="margin-top:12px;background:#0284c7;border-color:#0284c7;">➕ Submit Now</button>' +
+          '</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = items.map((item, idx) => {
+        const timeStr = item.createdAt ? new Date(item.createdAt).toLocaleString(undefined, {
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        }) : '-';
+        const safeUrl = item.liveUrl.startsWith('http://') || item.liveUrl.startsWith('https://') ? item.liveUrl : 'https://' + item.liveUrl;
+        return '<tr>' +
+          '<td style="font-weight:700;color:var(--text-muted);font-size:0.8rem;">#' + (idx + 1) + '</td>' +
+          '<td>' +
+            '<div style="font-weight:700;color:var(--text-main);">' + escapeHTML(item.studentName) + '</div>' +
+            (item.rollNo ? '<div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">ID: ' + escapeHTML(item.rollNo) + '</div>' : '') +
+          '</td>' +
+          '<td><span style="background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:4px;font-size:0.75rem;font-weight:700;">' + escapeHTML(item.semester || 'BCA VII') + '</span></td>' +
+          '<td>' +
+            '<a href="' + encodeURI(safeUrl) + '" target="_blank" rel="noopener noreferrer" class="url-link" title="Open live deployed site">' +
+              '<span>🌐</span> ' + escapeHTML(item.liveUrl) +
+            '</a>' +
+          '</td>' +
+          '<td>' +
+            '<div class="ip-badge">' +
+              '<span>💻</span> ' + escapeHTML(item.localIp) +
+              '<button class="copy-btn" onclick="copyText(\\'' + escapeJS(item.localIp) + '\\', this)" title="Copy IP">📋</button>' +
+            '</div>' +
+          '</td>' +
+          '<td><span style="font-size:0.8rem;color:var(--text-muted);">' + escapeHTML(item.remarks || '-') + '</span></td>' +
+          '<td><span style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap;">' + timeStr + '</span></td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[m]);
+    }
+
+    function escapeJS(str) {
+      if (!str) return '';
+      return String(str).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, "\\\\'");
+    }
+
+    function copyText(str, btn) {
+      navigator.clipboard.writeText(str);
+      const orig = btn.textContent;
+      btn.textContent = '✓';
+      setTimeout(() => { btn.textContent = orig; }, 1800);
+    }
+
+    function filterDeployments() {
+      const q = (document.getElementById('deploy-search').value || '').toLowerCase().trim();
+      if (!q) {
+        renderDeployments(allDeployments);
+        return;
+      }
+      const filtered = allDeployments.filter(d => 
+        (d.studentName && d.studentName.toLowerCase().includes(q)) ||
+        (d.rollNo && d.rollNo.toLowerCase().includes(q)) ||
+        (d.liveUrl && d.liveUrl.toLowerCase().includes(q)) ||
+        (d.localIp && d.localIp.toLowerCase().includes(q)) ||
+        (d.remarks && d.remarks.toLowerCase().includes(q))
+      );
+      renderDeployments(filtered);
+    }
+
+    async function handleDeploymentSubmit(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('deploy-form-error');
+      const submitBtn = document.getElementById('deploy-submit-btn');
+      errBox.style.display = 'none';
+      errBox.textContent = '';
+
+      const name = document.getElementById('deploy-name').value.trim();
+      const roll = document.getElementById('deploy-roll').value.trim();
+      let url = document.getElementById('deploy-url').value.trim();
+      const ip = document.getElementById('deploy-ip').value.trim();
+      const remarks = document.getElementById('deploy-remarks').value.trim();
+
+      if (!name || !url || !ip) {
+        errBox.textContent = 'Please fill out all required fields (*).';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      try {
+        const payload = { studentName: name, rollNo: roll, liveUrl: url, localIp: ip, remarks };
+        const res = await fetch('/api/deployments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+        if (!res.ok) {
+          throw new Error(result.error || 'Server returned status ' + res.status);
+        }
+
+        document.getElementById('deployment-form').reset();
+        closeModal('deployment-modal');
+        showToast('🎉 Submission saved! Your live lab is now visible to everyone.');
+        await loadDeployments();
+        await fetchDashboard();
+
+        const section = document.getElementById('bca7-deployments');
+        if (section) section.scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        errBox.textContent = 'Submission failed: ' + err.message;
+        errBox.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit & Publish Live';
+      }
+    }
+
     fetchDashboard();
     fetchStudents('');
     loadNotes();
+    loadDeployments();
+    setInterval(loadDeployments, 30000);
+
   </script>
 </body>
 </html>`;
@@ -1551,16 +1989,72 @@ const server = http.createServer(async (req, res) => {
       return send(res, 201, await addNote(query.text));
     }
 
-    // 11. Capstone Dashboard Telemetry API
+    // 11. BCA VII Deployments API
+    if (pathname === '/api/deployments') {
+      if (req.method === 'POST') {
+        const body = await parseBody(req);
+        const studentName = body.studentName || query.studentName;
+        const liveUrl = body.liveUrl || query.liveUrl;
+        const localIp = body.localIp || query.localIp;
+        const rollNo = body.rollNo || query.rollNo;
+        const remarks = body.remarks || query.remarks;
+
+        if (!studentName || !liveUrl || !localIp) {
+          return send(res, 400, { error: 'studentName, liveUrl, and localIp are required' });
+        }
+
+        const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').replace(/^.*:/, '');
+        const saved = await addDeployment({
+          studentName,
+          rollNo,
+          liveUrl,
+          localIp,
+          remarks,
+          clientIp
+        });
+        return send(res, 201, { success: true, deployment: saved });
+      }
+
+      // GET /api/deployments
+      const deployments = await getDeployments();
+      return send(res, 200, { count: deployments.length, deployments });
+    }
+
+    if (pathname === '/api/deployments/add') {
+      const studentName = query.studentName;
+      const liveUrl = query.liveUrl;
+      const localIp = query.localIp;
+      const rollNo = query.rollNo;
+      const remarks = query.remarks;
+
+      if (!studentName || !liveUrl || !localIp) {
+        return send(res, 400, { error: 'studentName, liveUrl, and localIp are required' });
+      }
+
+      const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').replace(/^.*:/, '');
+      const saved = await addDeployment({
+        studentName,
+        rollNo,
+        liveUrl,
+        localIp,
+        remarks,
+        clientIp
+      });
+      return send(res, 201, { success: true, deployment: saved });
+    }
+
+    // 12. Capstone Dashboard Telemetry API
     if (pathname === '/api/dashboard') {
-      const [students, notes, log] = await Promise.all([
+      const [students, notes, deployments, log] = await Promise.all([
         getStudents(),
         getNotes(),
+        getDeployments(),
         fsp.readFile(LOG_FILE, 'utf8').catch(() => '')
       ]);
       return send(res, 200, {
         students: students.length,
         notes: notes.length,
+        deployments: deployments.length,
         requestsLogged: log.split('\n').filter(Boolean).length
       });
     }
