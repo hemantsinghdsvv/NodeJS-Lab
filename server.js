@@ -722,17 +722,19 @@ const SHARED_CSS = `
   }
   .copy-btn {
     cursor: pointer;
-    background: transparent;
-    border: none;
-    color: #64748b;
-    font-size: 0.75rem;
-    padding: 2px 4px;
+    background: #e2e8f0;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 6px;
     border-radius: 3px;
-    transition: background 0.15s ease;
+    margin-left: 6px;
+    transition: all 0.15s ease;
   }
   .copy-btn:hover {
-    background: #e2e8f0;
-    color: #1e293b;
+    background: #cbd5e1;
+    color: #0f172a;
   }
   .form-label {
     display: block;
@@ -885,8 +887,8 @@ function getPortalHTML() {
         <button class="nav-btn active" onclick="filterCards('all', this)">All Labs</button>
         <button class="nav-btn" onclick="filterCards('script', this)">Script Labs</button>
         <button class="nav-btn" onclick="filterCards('server', this)">Server Labs</button>
-        <button class="nav-btn btn-highlight" onclick="openBca7Modal('view')">🚀 BCA VII Submissions (<span id="nav-bca7-count">0</span>)</button>
-        <a href="/bca7" class="nav-btn" style="color:#0284c7;font-weight:700;">BCA VII Page &nearr;</a>
+        <button class="nav-btn btn-highlight" onclick="openBca7Modal('view')">BCA VII Submissions (<span id="nav-bca7-count">0</span>)</button>
+        <a href="/bca7" class="nav-btn" style="color:#0284c7;font-weight:700;">BCA VII Directory</a>
         <a href="#capstone-panel" class="nav-btn">Capstone Demo</a>
         <button class="nav-btn" onclick="openModal('setup-modal')" style="margin-left:auto;">Student Setup Guide</button>
       </div>
@@ -1076,13 +1078,13 @@ function getPortalHTML() {
     <div class="modal-card" style="max-width:850px;max-height:88vh;display:flex;flex-direction:column;">
       <div class="modal-header" style="margin-bottom:10px;padding-bottom:10px;">
         <div>
-          <div class="bca7-badge">🎓 BCA SEMESTER VII</div>
+          <div class="bca7-badge">BCA SEMESTER VII</div>
           <h3 style="margin-bottom:2px;">BCA VII Student Lab Deployments</h3>
           <p style="font-size:0.82rem;color:var(--text-muted);margin:0;">Live deployed URLs and local workstation IP addresses for practical evaluations.</p>
         </div>
         <div style="display:flex;gap:8px;align-items:center;">
           <a href="/bca7" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:4px;">
-            <span>Open Dedicated Page</span> <span>&nearr;</span>
+            <span>Open Dedicated Page</span>
           </a>
           <button class="modal-close" onclick="closeModal('bca7-modal')">&times;</button>
         </div>
@@ -1091,14 +1093,14 @@ function getPortalHTML() {
       <!-- Navigation Tabs -->
       <div style="display:flex;gap:8px;border-bottom:1px solid var(--border-color);padding-bottom:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
         <button id="bca7-tab-view" class="btn btn-primary btn-sm" onclick="switchBca7Tab('view')" style="background:#0284c7;border-color:#0284c7;">
-          📋 View Submissions (<span id="bca7-tab-count">0</span>)
+          View Submissions (<span id="bca7-tab-count">0</span>)
         </button>
         <button id="bca7-tab-submit" class="btn btn-secondary btn-sm" onclick="switchBca7Tab('submit')">
-          ➕ Submit Your Lab
+          Submit Your Lab
         </button>
         <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-          <input type="text" id="deploy-search" class="input-field" placeholder="🔍 Search student, roll, or IP..." oninput="filterDeployments()" style="max-width:240px;padding:5px 8px;font-size:0.8rem;">
-          <button class="btn btn-secondary btn-sm" onclick="loadDeployments()" title="Refresh submissions">🔄</button>
+          <input type="text" id="deploy-search" class="input-field" placeholder="Search student, roll, or IP..." oninput="filterDeployments()" style="max-width:240px;padding:5px 8px;font-size:0.8rem;">
+          <button class="btn btn-secondary btn-sm" onclick="loadDeployments()" title="Refresh submissions">Refresh</button>
         </div>
       </div>
 
@@ -1413,7 +1415,7 @@ function getPortalHTML() {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">' +
           '<div style="font-size:1.05rem;margin-bottom:6px;font-weight:600;">No BCA VII lab submissions yet!</div>' +
           '<div style="font-size:0.84rem;">Be the first student to submit your deployed lab URL and local IP.</div>' +
-          '<button class="btn btn-primary btn-sm" onclick="switchBca7Tab(\\'submit\\')" style="margin-top:12px;background:#0284c7;border-color:#0284c7;">➕ Submit Now</button>' +
+          '<button class="btn btn-primary btn-sm" onclick="switchBca7Tab(\\'submit\\')" style="margin-top:12px;background:#0284c7;border-color:#0284c7;">Submit Now</button>' +
           '</td></tr>';
         return;
       }
@@ -1431,13 +1433,13 @@ function getPortalHTML() {
           '</td>' +
           '<td>' +
             '<a href="' + encodeURI(safeUrl) + '" target="_blank" rel="noopener noreferrer" class="url-link" title="Open live deployed site">' +
-              '<span>🌐</span> ' + escapeHTML(item.liveUrl) +
+              escapeHTML(item.liveUrl) +
             '</a>' +
           '</td>' +
           '<td>' +
             '<div class="ip-badge">' +
-              '<span>💻</span> ' + escapeHTML(item.localIp) +
-              '<button class="copy-btn" onclick="copyText(\\'' + escapeJS(item.localIp) + '\\', this)" title="Copy IP">📋</button>' +
+              escapeHTML(item.localIp) +
+              '<button class="copy-btn" onclick="copyText(\\'' + escapeJS(item.localIp) + '\\', this)" title="Copy IP">Copy</button>' +
             '</div>' +
           '</td>' +
           '<td><span style="font-size:0.8rem;color:var(--text-muted);">' + escapeHTML(item.remarks || '-') + '</span></td>' +
@@ -1461,7 +1463,7 @@ function getPortalHTML() {
     function copyText(str, btn) {
       navigator.clipboard.writeText(str);
       const orig = btn.textContent;
-      btn.textContent = '✓';
+      btn.textContent = 'Copied';
       setTimeout(() => { btn.textContent = orig; }, 1800);
     }
 
@@ -1522,7 +1524,7 @@ function getPortalHTML() {
 
         document.getElementById('deployment-form').reset();
         switchBca7Tab('view');
-        showToast('🎉 Submission saved! Your live lab is now visible to everyone.');
+        showToast('Submission saved successfully. Visible to everyone.');
         await loadDeployments();
         await fetchDashboard();
       } catch (err) {
@@ -1579,9 +1581,9 @@ function getBca7PageHTML() {
     <div class="container">
       <div class="nav-bar">
         <a href="/" class="nav-btn">&larr; Back to Main Portal</a>
-        <button class="nav-btn active">🎓 BCA VII Directory</button>
-        <button class="nav-btn btn-highlight" onclick="document.getElementById('deploy-name').focus()">➕ Submit Your Lab</button>
-        <button class="nav-btn" onclick="loadDeployments()">🔄 Refresh</button>
+        <button class="nav-btn active">BCA VII Directory</button>
+        <button class="nav-btn btn-highlight" onclick="document.getElementById('deploy-name').focus()">Submit Your Lab</button>
+        <button class="nav-btn" onclick="loadDeployments()">Refresh</button>
         <a href="/api/deployments" class="nav-btn" target="_blank" style="margin-left:auto;">Raw JSON API</a>
       </div>
     </div>
@@ -1592,7 +1594,7 @@ function getBca7PageHTML() {
 
       <!-- Header Banner -->
       <div style="margin-bottom:24px;">
-        <div class="bca7-badge">🎓 BCA SEMESTER VII • PRACTICAL EVALUATIONS</div>
+        <div class="bca7-badge">BCA SEMESTER VII &bull; PRACTICAL EVALUATIONS</div>
         <h2 class="section-title" style="font-size:1.4rem;">BCA VII Student Lab Deployments Directory</h2>
         <p class="section-desc" style="max-width:800px;margin-bottom:16px;">
           Central registry of live cloud deployment URLs and local machine IP addresses submitted by BCA Semester VII students.
@@ -1621,7 +1623,7 @@ function getBca7PageHTML() {
         
         <!-- Left Column: Submission Form Card -->
         <div class="capstone-card" style="border-top-color:#0284c7;">
-          <h3 style="font-size:1.1rem;margin-bottom:4px;">🚀 Submit Your Lab</h3>
+          <h3 style="font-size:1.1rem;margin-bottom:4px;">Submit Your Lab</h3>
           <p class="capstone-desc">Publish your cloud deployment link and workstation IP to this public directory.</p>
           
           <form id="deployment-form" onsubmit="handleDeploymentSubmit(event)">
@@ -1658,12 +1660,12 @@ function getBca7PageHTML() {
         <div class="capstone-card" style="border-top-color:#0284c7;">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
             <div>
-              <h3 style="font-size:1.1rem;margin-bottom:2px;">📋 Published Deployments</h3>
+              <h3 style="font-size:1.1rem;margin-bottom:2px;">Published Deployments</h3>
               <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">Live applications submitted by BCA VII classmates.</p>
             </div>
             <div style="display:flex;gap:8px;align-items:center;">
-              <input type="text" id="deploy-search" class="input-field" placeholder="🔍 Search name, roll, or IP..." oninput="filterDeployments()" style="padding:5px 10px;font-size:0.82rem;min-width:200px;">
-              <button class="btn btn-secondary btn-sm" onclick="loadDeployments()">🔄 Refresh</button>
+              <input type="text" id="deploy-search" class="input-field" placeholder="Search name, roll, or IP..." oninput="filterDeployments()" style="padding:5px 10px;font-size:0.82rem;min-width:200px;">
+              <button class="btn btn-secondary btn-sm" onclick="loadDeployments()">Refresh</button>
             </div>
           </div>
 
@@ -1743,13 +1745,13 @@ function getBca7PageHTML() {
           '</td>' +
           '<td>' +
             '<a href="' + encodeURI(safeUrl) + '" target="_blank" rel="noopener noreferrer" class="url-link" title="Open live deployed site">' +
-              '<span>🌐</span> ' + escapeHTML(item.liveUrl) +
+              escapeHTML(item.liveUrl) +
             '</a>' +
           '</td>' +
           '<td>' +
             '<div class="ip-badge">' +
-              '<span>💻</span> ' + escapeHTML(item.localIp) +
-              '<button class="copy-btn" onclick="copyText(\\'' + escapeJS(item.localIp) + '\\', this)" title="Copy IP">📋</button>' +
+              escapeHTML(item.localIp) +
+              '<button class="copy-btn" onclick="copyText(\\'' + escapeJS(item.localIp) + '\\', this)" title="Copy IP">Copy</button>' +
             '</div>' +
           '</td>' +
           '<td><span style="font-size:0.8rem;color:var(--text-muted);">' + escapeHTML(item.remarks || '-') + '</span></td>' +
@@ -1773,7 +1775,7 @@ function getBca7PageHTML() {
     function copyText(str, btn) {
       navigator.clipboard.writeText(str);
       const orig = btn.textContent;
-      btn.textContent = '✓';
+      btn.textContent = 'Copied';
       setTimeout(() => { btn.textContent = orig; }, 1800);
     }
 
@@ -1833,7 +1835,7 @@ function getBca7PageHTML() {
         }
 
         document.getElementById('deployment-form').reset();
-        showToast('🎉 Submission saved! Your live lab is now visible to everyone.');
+        showToast('Submission saved successfully. Visible to everyone.');
         await loadDeployments();
       } catch (err) {
         errBox.textContent = 'Submission failed: ' + err.message;
