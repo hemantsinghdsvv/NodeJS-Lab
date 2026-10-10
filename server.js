@@ -885,8 +885,8 @@ function getPortalHTML() {
         <button class="nav-btn active" onclick="filterCards('all', this)">All Labs</button>
         <button class="nav-btn" onclick="filterCards('script', this)">Script Labs</button>
         <button class="nav-btn" onclick="filterCards('server', this)">Server Labs</button>
-        <button class="nav-btn btn-highlight" onclick="openModal('deployment-modal')">🚀 Submit Lab (BCA VII)</button>
-        <a href="#bca7-deployments" class="nav-btn" style="color:#0284c7;font-weight:700;">🎓 BCA VII Live Board</a>
+        <button class="nav-btn btn-highlight" onclick="openBca7Modal('view')">🚀 BCA VII Submissions (<span id="nav-bca7-count">0</span>)</button>
+        <a href="/bca7" class="nav-btn" style="color:#0284c7;font-weight:700;">BCA VII Page &nearr;</a>
         <a href="#capstone-panel" class="nav-btn">Capstone Demo</a>
         <button class="nav-btn" onclick="openModal('setup-modal')" style="margin-left:auto;">Student Setup Guide</button>
       </div>
@@ -896,58 +896,9 @@ function getPortalHTML() {
   <main>
     <div class="container">
 
-      <!-- BCA VII Student Deployments Panel -->
-      <section id="bca7-deployments" class="bca7-panel">
-        <div class="bca7-header">
-          <div>
-            <div class="bca7-badge">🎓 BCA VII Practical Evaluations</div>
-            <h2 class="section-title" style="margin-bottom:4px;">BCA VII Student Lab Deployments</h2>
-            <p class="section-desc" style="margin-bottom:0;">Live cloud-deployed URLs and local system IP addresses submitted by BCA Semester VII students. Visible to all peers and faculty for instant testing.</p>
-          </div>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="openModal('deployment-modal')" style="background:#0284c7;border-color:#0284c7;font-weight:700;">
-              <span style="font-size:1rem;margin-right:4px;">🚀</span> Submit Your Live Lab (BCA VII)
-            </button>
-            <button class="btn btn-secondary" onclick="loadDeployments()">🔄 Refresh</button>
-          </div>
-        </div>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <input type="text" id="deploy-search" class="input-field" placeholder="🔍 Search student name, roll number, or IP..." oninput="filterDeployments()" style="min-width:280px;">
-            <span style="font-size:0.82rem;color:var(--text-muted);font-weight:600;">Total Submissions: <b id="deploy-count" style="color:#0284c7;font-size:0.95rem;">0</b></span>
-          </div>
-          <div style="font-size:0.8rem;color:var(--text-muted);">
-            💡 Click on any student's live URL to test their cloud deployment
-          </div>
-        </div>
-
-        <div class="deployments-table-wrapper">
-          <table class="deployments-table">
-            <thead>
-              <tr>
-                <th style="width:40px;">#</th>
-                <th>Student</th>
-                <th>Course / Sem</th>
-                <th>Live Deployed URL</th>
-                <th>Local System IP</th>
-                <th>Remarks / Host</th>
-                <th>Submitted</th>
-              </tr>
-            </thead>
-            <tbody id="deployments-table-body">
-              <tr>
-                <td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">
-                  Loading BCA VII submissions...
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
       <h2 class="section-title">Laboratory Exercises</h2>
       <p class="section-desc">Select any laboratory exercise below to run it live, view code, or open its workspace.</p>
+
 
       <!-- Labs Cards Grid -->
       <div class="labs-grid" id="labs-grid">
@@ -1120,45 +1071,96 @@ function getPortalHTML() {
     </div>
   </div>
 
-  <!-- 5. BCA VII Deployment Submission Modal -->
-  <div class="modal-overlay" id="deployment-modal" onclick="if(event.target===this)closeModal('deployment-modal')">
-    <div class="modal-card" style="max-width:560px;">
-      <div class="modal-header">
+  <!-- 5. BCA VII Modal with Submissions List & Form -->
+  <div class="modal-overlay" id="bca7-modal" onclick="if(event.target===this)closeModal('bca7-modal')">
+    <div class="modal-card" style="max-width:850px;max-height:88vh;display:flex;flex-direction:column;">
+      <div class="modal-header" style="margin-bottom:10px;padding-bottom:10px;">
         <div>
-          <h3>🚀 Submit BCA VII Lab Deployment</h3>
-          <p style="font-size:0.82rem;color:var(--text-muted);">Share your live deployed URL and local IP address for evaluation.</p>
+          <div class="bca7-badge">🎓 BCA SEMESTER VII</div>
+          <h3 style="margin-bottom:2px;">BCA VII Student Lab Deployments</h3>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin:0;">Live deployed URLs and local workstation IP addresses for practical evaluations.</p>
         </div>
-        <button class="modal-close" onclick="closeModal('deployment-modal')">&times;</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <a href="/bca7" class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:4px;">
+            <span>Open Dedicated Page</span> <span>&nearr;</span>
+          </a>
+          <button class="modal-close" onclick="closeModal('bca7-modal')">&times;</button>
+        </div>
       </div>
-      <form id="deployment-form" onsubmit="handleDeploymentSubmit(event)">
-        <div class="form-row">
-          <label class="form-label" for="deploy-name">Student Full Name *</label>
-          <input type="text" id="deploy-name" class="input-field" placeholder="e.g. Aditya Soni" required style="width:100%;">
+
+      <!-- Navigation Tabs -->
+      <div style="display:flex;gap:8px;border-bottom:1px solid var(--border-color);padding-bottom:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap;">
+        <button id="bca7-tab-view" class="btn btn-primary btn-sm" onclick="switchBca7Tab('view')" style="background:#0284c7;border-color:#0284c7;">
+          📋 View Submissions (<span id="bca7-tab-count">0</span>)
+        </button>
+        <button id="bca7-tab-submit" class="btn btn-secondary btn-sm" onclick="switchBca7Tab('submit')">
+          ➕ Submit Your Lab
+        </button>
+        <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+          <input type="text" id="deploy-search" class="input-field" placeholder="🔍 Search student, roll, or IP..." oninput="filterDeployments()" style="max-width:240px;padding:5px 8px;font-size:0.8rem;">
+          <button class="btn btn-secondary btn-sm" onclick="loadDeployments()" title="Refresh submissions">🔄</button>
         </div>
-        <div class="form-row">
-          <label class="form-label" for="deploy-roll">Roll Number / Student ID *</label>
-          <input type="text" id="deploy-roll" class="input-field" placeholder="e.g. 23145001" required style="width:100%;">
+      </div>
+
+      <!-- Tab 1: View Submissions List -->
+      <div id="bca7-content-view" style="overflow-y:auto;flex:1;">
+        <div class="deployments-table-wrapper" style="margin-top:0;">
+          <table class="deployments-table">
+            <thead>
+              <tr>
+                <th style="width:35px;">#</th>
+                <th>Student</th>
+                <th>Live Deployed URL</th>
+                <th>Local System IP</th>
+                <th>Remarks / Host</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody id="deployments-table-body">
+              <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">Loading BCA VII submissions...</td></tr>
+            </tbody>
+          </table>
         </div>
-        <div class="form-row">
-          <label class="form-label" for="deploy-url">Live Deployed URL *</label>
-          <input type="url" id="deploy-url" class="input-field" placeholder="https://my-nodejs-lab.onrender.com" required style="width:100%;">
-          <div class="form-help">Cloud host URL (Render, Vercel, Railway, etc.). Must include https://</div>
-        </div>
-        <div class="form-row">
-          <label class="form-label" for="deploy-ip">Local System IP Address *</label>
-          <input type="text" id="deploy-ip" class="input-field" placeholder="e.g. 192.168.1.45:3000" required style="width:100%;">
-          <div class="form-help">Your workstation's local IPv4 and port (run <code>ipconfig</code> in CMD).</div>
-        </div>
-        <div class="form-row">
-          <label class="form-label" for="deploy-remarks">Remarks / Host Platform (Optional)</label>
-          <input type="text" id="deploy-remarks" class="input-field" placeholder="e.g. Render Web Service, port 3000" style="width:100%;">
-        </div>
-        <div id="deploy-form-error" style="color:#dc2626;font-size:0.82rem;margin-bottom:10px;display:none;background:#fef2f2;padding:8px 10px;border-radius:4px;border:1px solid #fecaca;"></div>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-secondary btn-sm" onclick="closeModal('deployment-modal')">Cancel</button>
-          <button type="submit" id="deploy-submit-btn" class="btn btn-primary btn-sm" style="background:#0284c7;border-color:#0284c7;font-weight:700;">Submit & Publish Live</button>
-        </div>
-      </form>
+      </div>
+
+      <!-- Tab 2: Submit Lab Form -->
+      <div id="bca7-content-submit" style="display:none;overflow-y:auto;flex:1;padding:4px 2px;">
+        <form id="deployment-form" onsubmit="handleDeploymentSubmit(event)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-row">
+              <label class="form-label" for="deploy-name">Student Full Name *</label>
+              <input type="text" id="deploy-name" class="input-field" placeholder="e.g. Aditya Soni" required style="width:100%;">
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="deploy-roll">Roll Number / Student ID *</label>
+              <input type="text" id="deploy-roll" class="input-field" placeholder="e.g. 23145001" required style="width:100%;">
+            </div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="deploy-url">Live Deployed URL *</label>
+            <input type="url" id="deploy-url" class="input-field" placeholder="https://my-nodejs-lab.onrender.com" required style="width:100%;">
+            <div class="form-help">Where your lab is deployed (Render, Vercel, Railway, etc.). Must include https://</div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="deploy-ip">Local System IP Address *</label>
+            <input type="text" id="deploy-ip" class="input-field" placeholder="e.g. 192.168.1.45:3000" required style="width:100%;">
+            <div class="form-help">Your machine's local IPv4 and port (run <code>ipconfig</code> in CMD).</div>
+          </div>
+          <div class="form-row">
+            <label class="form-label" for="deploy-remarks">Remarks / Host Platform (Optional)</label>
+            <input type="text" id="deploy-remarks" class="input-field" placeholder="e.g. Render Web Service, port 3000" style="width:100%;">
+          </div>
+          <div id="deploy-form-error" style="color:#dc2626;font-size:0.82rem;margin-bottom:10px;display:none;background:#fef2f2;padding:8px 10px;border-radius:4px;border:1px solid #fecaca;"></div>
+          <div class="modal-actions" style="margin-top:12px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="switchBca7Tab('view')">Back to List</button>
+            <button type="submit" id="deploy-submit-btn" class="btn btn-primary btn-sm" style="background:#0284c7;border-color:#0284c7;font-weight:700;">Submit & Publish Live</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-actions" style="margin-top:12px;padding-top:10px;">
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('bca7-modal')">Close</button>
+      </div>
     </div>
   </div>
 
@@ -1351,29 +1353,67 @@ function getPortalHTML() {
       setTimeout(() => { t.style.display = 'none'; }, 3500);
     }
 
+    function openBca7Modal(tab) {
+      openModal('bca7-modal');
+      switchBca7Tab(tab || 'view');
+    }
+
+    function switchBca7Tab(tab) {
+      const viewBtn = document.getElementById('bca7-tab-view');
+      const submitBtn = document.getElementById('bca7-tab-submit');
+      const viewContent = document.getElementById('bca7-content-view');
+      const submitContent = document.getElementById('bca7-content-submit');
+
+      if (tab === 'submit') {
+        viewBtn.className = 'btn btn-secondary btn-sm';
+        viewBtn.style.background = '';
+        viewBtn.style.borderColor = '';
+        submitBtn.className = 'btn btn-primary btn-sm';
+        submitBtn.style.background = '#0284c7';
+        submitBtn.style.borderColor = '#0284c7';
+        viewContent.style.display = 'none';
+        submitContent.style.display = 'block';
+      } else {
+        viewBtn.className = 'btn btn-primary btn-sm';
+        viewBtn.style.background = '#0284c7';
+        viewBtn.style.borderColor = '#0284c7';
+        submitBtn.className = 'btn btn-secondary btn-sm';
+        submitBtn.style.background = '';
+        submitBtn.style.borderColor = '';
+        viewContent.style.display = 'block';
+        submitContent.style.display = 'none';
+      }
+    }
+
     async function loadDeployments() {
       const tbody = document.getElementById('deployments-table-body');
       try {
         const res = await fetch('/api/deployments');
         const data = await res.json();
         allDeployments = data.deployments || [];
-        document.getElementById('deploy-count').textContent = allDeployments.length;
+        if (document.getElementById('nav-bca7-count')) {
+          document.getElementById('nav-bca7-count').textContent = allDeployments.length;
+        }
+        if (document.getElementById('bca7-tab-count')) {
+          document.getElementById('bca7-tab-count').textContent = allDeployments.length;
+        }
         if (document.getElementById('stat-deployments')) {
           document.getElementById('stat-deployments').textContent = allDeployments.length;
         }
         renderDeployments(allDeployments);
       } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#dc2626;">Failed to load deployments: ' + err.message + '</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#dc2626;">Failed to load deployments: ' + err.message + '</td></tr>';
       }
     }
 
     function renderDeployments(items) {
       const tbody = document.getElementById('deployments-table-body');
+      if (!tbody) return;
       if (!items || !items.length) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">' +
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">' +
           '<div style="font-size:1.05rem;margin-bottom:6px;font-weight:600;">No BCA VII lab submissions yet!</div>' +
           '<div style="font-size:0.84rem;">Be the first student to submit your deployed lab URL and local IP.</div>' +
-          '<button class="btn btn-primary btn-sm" onclick="openModal(\\'deployment-modal\\')" style="margin-top:12px;background:#0284c7;border-color:#0284c7;">➕ Submit Now</button>' +
+          '<button class="btn btn-primary btn-sm" onclick="switchBca7Tab(\\'submit\\')" style="margin-top:12px;background:#0284c7;border-color:#0284c7;">➕ Submit Now</button>' +
           '</td></tr>';
         return;
       }
@@ -1389,7 +1429,6 @@ function getPortalHTML() {
             '<div style="font-weight:700;color:var(--text-main);">' + escapeHTML(item.studentName) + '</div>' +
             (item.rollNo ? '<div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">ID: ' + escapeHTML(item.rollNo) + '</div>' : '') +
           '</td>' +
-          '<td><span style="background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:4px;font-size:0.75rem;font-weight:700;">' + escapeHTML(item.semester || 'BCA VII') + '</span></td>' +
           '<td>' +
             '<a href="' + encodeURI(safeUrl) + '" target="_blank" rel="noopener noreferrer" class="url-link" title="Open live deployed site">' +
               '<span>🌐</span> ' + escapeHTML(item.liveUrl) +
@@ -1482,13 +1521,10 @@ function getPortalHTML() {
         }
 
         document.getElementById('deployment-form').reset();
-        closeModal('deployment-modal');
+        switchBca7Tab('view');
         showToast('🎉 Submission saved! Your live lab is now visible to everyone.');
         await loadDeployments();
         await fetchDashboard();
-
-        const section = document.getElementById('bca7-deployments');
-        if (section) section.scrollIntoView({ behavior: 'smooth' });
       } catch (err) {
         errBox.textContent = 'Submission failed: ' + err.message;
         errBox.style.display = 'block';
@@ -1504,6 +1540,312 @@ function getPortalHTML() {
     loadDeployments();
     setInterval(loadDeployments, 30000);
 
+  </script>
+</body>
+</html>`;
+}
+
+// Dedicated Separate Page for BCA VII Practical Deployments
+function getBca7PageHTML() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BCA VII Student Lab Deployments • Dev Sanskriti Vishwavidyalaya</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    ${SHARED_CSS}
+    .bca7-grid-layout {
+      display: grid;
+      grid-template-columns: 370px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .bca7-grid-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  ${getHeaderHTML('BCA VII Practical Deployments')}
+
+  <!-- Navigation Filters -->
+  <div class="nav-section">
+    <div class="container">
+      <div class="nav-bar">
+        <a href="/" class="nav-btn">&larr; Back to Main Portal</a>
+        <button class="nav-btn active">🎓 BCA VII Directory</button>
+        <button class="nav-btn btn-highlight" onclick="document.getElementById('deploy-name').focus()">➕ Submit Your Lab</button>
+        <button class="nav-btn" onclick="loadDeployments()">🔄 Refresh</button>
+        <a href="/api/deployments" class="nav-btn" target="_blank" style="margin-left:auto;">Raw JSON API</a>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <div class="container">
+
+      <!-- Header Banner -->
+      <div style="margin-bottom:24px;">
+        <div class="bca7-badge">🎓 BCA SEMESTER VII • PRACTICAL EVALUATIONS</div>
+        <h2 class="section-title" style="font-size:1.4rem;">BCA VII Student Lab Deployments Directory</h2>
+        <p class="section-desc" style="max-width:800px;margin-bottom:16px;">
+          Central registry of live cloud deployment URLs and local machine IP addresses submitted by BCA Semester VII students.
+          Click on any classmate's live link to test their application in real time.
+        </p>
+      </div>
+
+      <!-- Top Summary Metrics -->
+      <div class="stats-row" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px; max-width: 600px;">
+        <div class="stat-box">
+          <div class="stat-val" id="stat-bca7-total" style="color:#0284c7;">-</div>
+          <div class="stat-lbl">Total Submissions</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" style="color:var(--node-green);">BCA VII</div>
+          <div class="stat-lbl">Semester Class</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-bca7-status" style="color:var(--node-green);">Live</div>
+          <div class="stat-lbl">Directory Status</div>
+        </div>
+      </div>
+
+      <!-- Two-Column Layout: Form on Left, Table on Right -->
+      <div class="bca7-grid-layout">
+        
+        <!-- Left Column: Submission Form Card -->
+        <div class="capstone-card" style="border-top-color:#0284c7;">
+          <h3 style="font-size:1.1rem;margin-bottom:4px;">🚀 Submit Your Lab</h3>
+          <p class="capstone-desc">Publish your cloud deployment link and workstation IP to this public directory.</p>
+          
+          <form id="deployment-form" onsubmit="handleDeploymentSubmit(event)">
+            <div class="form-row">
+              <label class="form-label" for="deploy-name">Student Full Name *</label>
+              <input type="text" id="deploy-name" class="input-field" placeholder="e.g. Aditya Soni" required style="width:100%;">
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="deploy-roll">Roll Number / Student ID *</label>
+              <input type="text" id="deploy-roll" class="input-field" placeholder="e.g. 23145001" required style="width:100%;">
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="deploy-url">Live Deployed URL *</label>
+              <input type="url" id="deploy-url" class="input-field" placeholder="https://my-nodejs-lab.onrender.com" required style="width:100%;">
+              <div class="form-help">Where your lab is deployed (Render, Vercel, Railway, etc.). Must include https://</div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="deploy-ip">Local System IP Address *</label>
+              <input type="text" id="deploy-ip" class="input-field" placeholder="e.g. 192.168.1.45:3000" required style="width:100%;">
+              <div class="form-help">Your workstation IP & port (run <code>ipconfig</code> in CMD).</div>
+            </div>
+            <div class="form-row">
+              <label class="form-label" for="deploy-remarks">Remarks / Host Platform (Optional)</label>
+              <input type="text" id="deploy-remarks" class="input-field" placeholder="e.g. Render Web Service, port 3000" style="width:100%;">
+            </div>
+            <div id="deploy-form-error" style="color:#dc2626;font-size:0.82rem;margin-bottom:10px;display:none;background:#fef2f2;padding:8px 10px;border-radius:4px;border:1px solid #fecaca;"></div>
+            <button type="submit" id="deploy-submit-btn" class="btn btn-primary" style="width:100%;background:#0284c7;border-color:#0284c7;font-weight:700;margin-top:6px;">
+              Submit & Publish to Directory
+            </button>
+          </form>
+        </div>
+
+        <!-- Right Column: Submissions Table Card -->
+        <div class="capstone-card" style="border-top-color:#0284c7;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+            <div>
+              <h3 style="font-size:1.1rem;margin-bottom:2px;">📋 Published Deployments</h3>
+              <p style="font-size:0.8rem;color:var(--text-muted);margin:0;">Live applications submitted by BCA VII classmates.</p>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="text" id="deploy-search" class="input-field" placeholder="🔍 Search name, roll, or IP..." oninput="filterDeployments()" style="padding:5px 10px;font-size:0.82rem;min-width:200px;">
+              <button class="btn btn-secondary btn-sm" onclick="loadDeployments()">🔄 Refresh</button>
+            </div>
+          </div>
+
+          <div class="deployments-table-wrapper" style="margin-top:0;">
+            <table class="deployments-table">
+              <thead>
+                <tr>
+                  <th style="width:35px;">#</th>
+                  <th>Student</th>
+                  <th>Live Deployed URL</th>
+                  <th>Local System IP</th>
+                  <th>Remarks / Host</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody id="deployments-table-body">
+                <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-muted);">Loading BCA VII submissions...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-notification" class="toast"></div>
+
+  ${getFooterHTML()}
+
+  <script>
+    let allDeployments = [];
+
+    function showToast(msg) {
+      const t = document.getElementById('toast-notification');
+      t.textContent = msg;
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3500);
+    }
+
+    async function loadDeployments() {
+      const tbody = document.getElementById('deployments-table-body');
+      try {
+        const res = await fetch('/api/deployments');
+        const data = await res.json();
+        allDeployments = data.deployments || [];
+        const totalBox = document.getElementById('stat-bca7-total');
+        if (totalBox) totalBox.textContent = allDeployments.length;
+        renderDeployments(allDeployments);
+      } catch (err) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:20px;color:#dc2626;">Failed to load deployments: ' + err.message + '</td></tr>';
+      }
+    }
+
+    function renderDeployments(items) {
+      const tbody = document.getElementById('deployments-table-body');
+      if (!tbody) return;
+      if (!items || !items.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">' +
+          '<div style="font-size:1.05rem;margin-bottom:6px;font-weight:600;">No BCA VII lab submissions yet!</div>' +
+          '<div style="font-size:0.84rem;">Submit your deployed lab URL using the form on the left.</div>' +
+          '</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = items.map((item, idx) => {
+        const timeStr = item.createdAt ? new Date(item.createdAt).toLocaleString(undefined, {
+          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        }) : '-';
+        const safeUrl = item.liveUrl.startsWith('http://') || item.liveUrl.startsWith('https://') ? item.liveUrl : 'https://' + item.liveUrl;
+        return '<tr>' +
+          '<td style="font-weight:700;color:var(--text-muted);font-size:0.8rem;">#' + (idx + 1) + '</td>' +
+          '<td>' +
+            '<div style="font-weight:700;color:var(--text-main);">' + escapeHTML(item.studentName) + '</div>' +
+            (item.rollNo ? '<div style="font-size:0.75rem;color:var(--text-muted);font-family:monospace;">ID: ' + escapeHTML(item.rollNo) + '</div>' : '') +
+          '</td>' +
+          '<td>' +
+            '<a href="' + encodeURI(safeUrl) + '" target="_blank" rel="noopener noreferrer" class="url-link" title="Open live deployed site">' +
+              '<span>🌐</span> ' + escapeHTML(item.liveUrl) +
+            '</a>' +
+          '</td>' +
+          '<td>' +
+            '<div class="ip-badge">' +
+              '<span>💻</span> ' + escapeHTML(item.localIp) +
+              '<button class="copy-btn" onclick="copyText(\\'' + escapeJS(item.localIp) + '\\', this)" title="Copy IP">📋</button>' +
+            '</div>' +
+          '</td>' +
+          '<td><span style="font-size:0.8rem;color:var(--text-muted);">' + escapeHTML(item.remarks || '-') + '</span></td>' +
+          '<td><span style="font-size:0.78rem;color:var(--text-muted);white-space:nowrap;">' + timeStr + '</span></td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    function escapeHTML(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[m]);
+    }
+
+    function escapeJS(str) {
+      if (!str) return '';
+      return String(str).replace(/\\\\/g, '\\\\\\\\').replace(/'/g, "\\\\'");
+    }
+
+    function copyText(str, btn) {
+      navigator.clipboard.writeText(str);
+      const orig = btn.textContent;
+      btn.textContent = '✓';
+      setTimeout(() => { btn.textContent = orig; }, 1800);
+    }
+
+    function filterDeployments() {
+      const q = (document.getElementById('deploy-search').value || '').toLowerCase().trim();
+      if (!q) {
+        renderDeployments(allDeployments);
+        return;
+      }
+      const filtered = allDeployments.filter(d => 
+        (d.studentName && d.studentName.toLowerCase().includes(q)) ||
+        (d.rollNo && d.rollNo.toLowerCase().includes(q)) ||
+        (d.liveUrl && d.liveUrl.toLowerCase().includes(q)) ||
+        (d.localIp && d.localIp.toLowerCase().includes(q)) ||
+        (d.remarks && d.remarks.toLowerCase().includes(q))
+      );
+      renderDeployments(filtered);
+    }
+
+    async function handleDeploymentSubmit(e) {
+      e.preventDefault();
+      const errBox = document.getElementById('deploy-form-error');
+      const submitBtn = document.getElementById('deploy-submit-btn');
+      errBox.style.display = 'none';
+      errBox.textContent = '';
+
+      const name = document.getElementById('deploy-name').value.trim();
+      const roll = document.getElementById('deploy-roll').value.trim();
+      let url = document.getElementById('deploy-url').value.trim();
+      const ip = document.getElementById('deploy-ip').value.trim();
+      const remarks = document.getElementById('deploy-remarks').value.trim();
+
+      if (!name || !url || !ip) {
+        errBox.textContent = 'Please fill out all required fields (*).';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      try {
+        const payload = { studentName: name, rollNo: roll, liveUrl: url, localIp: ip, remarks };
+        const res = await fetch('/api/deployments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+        if (!res.ok) {
+          throw new Error(result.error || 'Server returned status ' + res.status);
+        }
+
+        document.getElementById('deployment-form').reset();
+        showToast('🎉 Submission saved! Your live lab is now visible to everyone.');
+        await loadDeployments();
+      } catch (err) {
+        errBox.textContent = 'Submission failed: ' + err.message;
+        errBox.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit & Publish to Directory';
+      }
+    }
+
+    loadDeployments();
+    setInterval(loadDeployments, 20000);
   </script>
 </body>
 </html>`;
@@ -1887,6 +2229,12 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/') {
       return send(res, 200, getPortalHTML());
     }
+
+    // 2b. Dedicated BCA VII Submissions Directory Page
+    if (pathname === '/bca7' || pathname === '/bca-vii' || pathname === '/deployments') {
+      return send(res, 200, getBca7PageHTML());
+    }
+
 
     // 3. Health Endpoint
     if (pathname === '/health') {
