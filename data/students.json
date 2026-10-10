@@ -1,0 +1,16 @@
+[
+  { "id": 23145001, "name": "Aditya Soni", "course": "BCA", "semester": 5 },
+  { "id": 23145004, "name": "Ayush Ram Tripathi", "course": "BCA", "semester": 5 },
+  { "id": 23145005, "name": "Bhaskar Mall", "course": "BCA", "semester": 5 },
+  { "id": 23145006, "name": "Gouri", "course": "BCA", "semester": 5 },
+  { "id": 23145009, "name": "Kanak Sharma", "course": "BCA", "semester": 5 },
+  { "id": 23145012, "name": "Nisha Bharti", "course": "BCA", "semester": 5 },
+  { "id": 23145013, "name": "Pragya Gupta", "course": "BCA", "semester": 5 },
+  { "id": 23145018, "name": "Rishabh Khatiwada", "course": "BCA", "semester": 5 },
+  { "id": 23145021, "name": "Sayon Koley", "course": "BCA", "semester": 5 },
+  { "id": 23145022, "name": "Shreya Singh", "course": "BSc IT", "semester": 5 },
+  { "id": 23145024, "name": "Sudhanshu Belwal", "course": "BCA", "semester": 5 },
+  { "id": 23145026, "name": "Yadev Singh Nishad", "course": "BSc IT", "semester": 5 },
+  { "id": 23145027, "name": "Mikki Jaiswal", "course": "BSc IT", "semester": 5 },
+  { "id": 23145028, "name": "Shreya Kashyap", "course": "BSc IT", "semester": 5 }
+]

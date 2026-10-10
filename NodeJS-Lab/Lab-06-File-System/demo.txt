@@ -1,0 +1,2 @@
+Hello from Lab 06
+Second line
